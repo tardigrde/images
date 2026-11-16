@@ -1,7 +1,10 @@
-# opencode server image for the home-cluster Pi (k3s, arm64).
-# Debian slim (glibc), opencode, git, gh, mise, ripgrep. Non-root.
-# Toolchains (mise) and browsers (Playwright) install at runtime into /workspace.
-FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+# Misc opencode images. One Dockerfile, a shared tool layer, one stage per use case:
+#   server  opencode server for a k3s node (non-root, HOME=/workspace). Default stage.
+#   eval    root image for agent evals (Harbor): V2 CLI pre-installed, no entrypoint.
+# Both build for linux/amd64 and linux/arm64.
+# Debian slim (glibc), git, gh, mise, ripgrep. Toolchains (mise) and browsers
+# (Playwright) install at runtime.
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2 AS base
 
 ARG TARGETARCH
 ARG OPENCODE_VERSION=1.19.5
@@ -41,6 +44,26 @@ RUN case "$TARGETARCH" in \
  && install -m 0755 mise /usr/local/bin/mise \
  && rm -rf /tmp/*
 
+# --- eval: opencode V2 CLI pre-installed where Harbor looks for it -----------
+# Harbor's opencode-v2 agent skips its own install when the CLI is already at
+# $HOME/.harbor/agents/opencode-v2 (about 2 minutes saved per trial). The CLI is a
+# native binary; Node is needed to install it only, so it stays in this build stage.
+FROM base AS v2-build
+ARG OPENCODE_V2_VERSION=2.3.0
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends nodejs npm \
+ && rm -rf /var/lib/apt/lists/*
+RUN npm install --prefix /root/.harbor/agents/opencode-v2 --no-audit --no-fund "@opencode/cli@${OPENCODE_V2_VERSION}" \
+ && /root/.harbor/agents/opencode-v2/node_modules/.bin/opencode --version
+
+FROM base AS eval
+# Root and no opencode entrypoint: Harbor installs its agent and runs commands as root.
+COPY --from=v2-build /root/.harbor /root/.harbor
+WORKDIR /app
+CMD ["bash"]
+
+# --- server: keep last so a plain `docker build .` is still the server image -
+FROM base AS server
 # HOME is the workspace volume: repos, opencode data, mise, caches survive restarts.
 RUN useradd --uid 1000 --user-group --home-dir /workspace --no-create-home --shell /bin/bash opencode \
  && mkdir -p /workspace && chown opencode:opencode /workspace
