@@ -24,7 +24,7 @@ gh api repos/anomalyco/opencode/releases/latest \
   -q '.assets[] | select(.name|test("^opencode-linux-(arm64|x64).tar.gz$")) | "\(.name) \(.digest)"'
 ```
 
-Same for `cli/cli` (gh) and `jdx/mise`. Dependabot updates the base image and
+Same for `cli/cli` (gh) and `jdx/mise`. Dependabot (weekly) updates the base image and
 the actions.
 
 ## Not in the image yet
