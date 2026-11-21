@@ -53,8 +53,6 @@ ARG OPENCLAW_VERSION=2026.10.9
 ARG CLAWHUB_VERSION=0.24.1
 # renovate: datasource=npm depName=@steipete/summarize
 ARG SUMMARIZE_VERSION=0.25.3
-# renovate: datasource=npm depName=ws
-ARG WS_VERSION=8.22.1
 # renovate: datasource=npm depName=acpx
 ARG ACPX_VERSION=0.13.0
 # Stable v2 channel (npm "latest" of @opencode/cli). Not the beta channel.
@@ -65,7 +63,6 @@ RUN npm install -g \
     openclaw@${OPENCLAW_VERSION} \
     clawhub@${CLAWHUB_VERSION} \
     @steipete/summarize@${SUMMARIZE_VERSION} \
-    ws@${WS_VERSION} \
     acpx@${ACPX_VERSION} \
     @opencode/cli@${OPENCODE_CLI_VERSION} \
   && npm cache clean --force \
