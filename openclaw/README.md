@@ -17,9 +17,16 @@ runtime (Secrets and the PVC in `tardigrde/home-cluster`, `k8s/apps/openclaw`).
 
 ## Start
 
-`entrypoint.sh` seeds workspace templates, installs the skills and plugins from
-the manifests into the PVC, then runs `openclaw gateway --bind lan --port 18789`.
+`entrypoint.sh` installs the skills and plugins from the manifests into the PVC,
+then runs `openclaw gateway --bind lan --port 18789`. There are no workspace
+templates in the image: persona files are personal and live only in the PVC.
 `OPENCLAW_SKIP_INSTALL=1` skips the skill and plugin install.
+
+The skill list is read from `$OPENCLAW_SKILLS_MANIFEST`. The cluster sets it to
+a ConfigMap in `tardigrde/home-cluster` (`k8s/apps/openclaw/skills-manifest.txt`),
+so a new ClawHub skill needs no image rebuild. `skills-manifest.txt` in this
+folder is the default for a standalone run. The plugin list stays in the image
+(`plugins-manifest.txt`, pinned versions).
 
 ## Update
 
