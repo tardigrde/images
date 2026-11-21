@@ -12,7 +12,7 @@
 ###############################################################################
 
 # Node 24.16 or newer is required by OpenClaw 2026.9.3+. Renovate bumps both.
-FROM node:24.22-bookworm-slim
+FROM node:26.13-bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     age \
