@@ -1,9 +1,0 @@
-# OpenClaw Plugins Manifest
-# Pinned stock plugins — repo-controlled versions, prevents unpinned drift.
-# Installed on container startup via entrypoint.sh (openclaw plugins install).
-# To add a plugin: add its npm spec here (e.g. @openclaw/foo@1.2.3), rebuild and deploy.
-# To remove a plugin: remove the line, then manually remove from ~/.openclaw/npm/projects/ on VPS.
-# Use exact versions for rollback/reproducible testing; update via openclaw plugins update.
-
-@martian-engineering/lossless-claw@1.2.0
-@openclaw/brave-plugin@2026.10.9

@@ -77,7 +77,6 @@ RUN npm install -g \
   && mkdir -p /home/node/.openclaw/workspace /.clawhub \
   && chown -R node:node /home/node /.clawhub
 
-COPY plugins-manifest.txt /opt/config/plugins-manifest.txt
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

@@ -22,11 +22,12 @@ then runs `openclaw gateway --bind lan --port 18789`. There are no workspace
 templates in the image: persona files are personal and live only in the PVC.
 `OPENCLAW_SKIP_INSTALL=1` skips the skill and plugin install.
 
-The skill list is read from `$OPENCLAW_SKILLS_MANIFEST`. The cluster sets it to
-a ConfigMap in `tardigrde/home-cluster` (`k8s/apps/openclaw/skills-manifest.txt`),
-so a new ClawHub skill needs no image rebuild. There is no skill list in the
-image: if the variable is not set, no skills are installed. The plugin list
-stays in the image (`plugins-manifest.txt`, pinned versions).
+The skill list is read from `$OPENCLAW_SKILLS_MANIFEST` and the plugin list from
+`$OPENCLAW_PLUGINS_MANIFEST`. The cluster sets both to files of one ConfigMap in
+`tardigrde/home-cluster` (`k8s/apps/openclaw/`), so a new skill or plugin needs no
+image rebuild. There are no lists in the image: if a variable is not set, nothing
+of that kind is installed. Plugin versions are pinned in the cluster repo,
+together with the image tag.
 
 ## Update
 

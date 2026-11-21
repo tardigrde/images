@@ -83,8 +83,12 @@ fi
 # Install plugins from the manifest (pinned versions, no drift)
 # INSTALL_LOSSLESS_CLAW=0 skips lossless-claw.
 ###############################################################################
-PLUGINS_MANIFEST="/opt/config/plugins-manifest.txt"
-if [[ "${OPENCLAW_SKIP_INSTALL:-0}" != "1" && -f "$PLUGINS_MANIFEST" ]]; then
+# The list is not in the image either (ConfigMap in tardigrde/home-cluster,
+# path in OPENCLAW_PLUGINS_MANIFEST). Not set: no plugins.
+PLUGINS_MANIFEST="${OPENCLAW_PLUGINS_MANIFEST:-}"
+if [[ -z "$PLUGINS_MANIFEST" ]]; then
+  echo "[entrypoint] OPENCLAW_PLUGINS_MANIFEST not set: no plugins to install."
+elif [[ "${OPENCLAW_SKIP_INSTALL:-0}" != "1" && -f "$PLUGINS_MANIFEST" ]]; then
   echo "[entrypoint] Installing plugins from manifest ..."
   while IFS= read -r line; do
     line="${line%%#*}"
