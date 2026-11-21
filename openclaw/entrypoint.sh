@@ -4,9 +4,9 @@
 # /home/node/.openclaw. The root filesystem is read-only in the cluster.
 set -euo pipefail
 
-# The cluster mounts its own list (ConfigMap) and sets OPENCLAW_SKILLS_MANIFEST.
-# The file baked into the image is the fallback for a standalone run.
-MANIFEST="${OPENCLAW_SKILLS_MANIFEST:-/opt/config/skills-manifest.txt}"
+# The skill list is not in the image. The cluster mounts it (ConfigMap in
+# tardigrde/home-cluster) and sets OPENCLAW_SKILLS_MANIFEST. Not set: no skills.
+MANIFEST="${OPENCLAW_SKILLS_MANIFEST:-}"
 WORKDIR="/home/node/.openclaw/workspace"
 
 ###############################################################################
@@ -19,7 +19,9 @@ mkdir -p "$WORKDIR"
 # Install ClawHub skills from the manifest
 # Set OPENCLAW_SKIP_INSTALL=1 to skip skills and plugins (faster start, offline).
 ###############################################################################
-if [[ "${OPENCLAW_SKIP_INSTALL:-0}" != "1" && -f "$MANIFEST" ]]; then
+if [[ -z "$MANIFEST" ]]; then
+  echo "[entrypoint] OPENCLAW_SKILLS_MANIFEST not set: no skills to install."
+elif [[ "${OPENCLAW_SKIP_INSTALL:-0}" != "1" && -f "$MANIFEST" ]]; then
   echo "[entrypoint] Installing ClawHub skills from manifest ..."
   while IFS= read -r line; do
     line="${line%%#*}"

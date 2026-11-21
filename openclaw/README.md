@@ -24,9 +24,9 @@ templates in the image: persona files are personal and live only in the PVC.
 
 The skill list is read from `$OPENCLAW_SKILLS_MANIFEST`. The cluster sets it to
 a ConfigMap in `tardigrde/home-cluster` (`k8s/apps/openclaw/skills-manifest.txt`),
-so a new ClawHub skill needs no image rebuild. `skills-manifest.txt` in this
-folder is the default for a standalone run. The plugin list stays in the image
-(`plugins-manifest.txt`, pinned versions).
+so a new ClawHub skill needs no image rebuild. There is no skill list in the
+image: if the variable is not set, no skills are installed. The plugin list
+stays in the image (`plugins-manifest.txt`, pinned versions).
 
 ## Update
 
