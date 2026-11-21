@@ -4,7 +4,9 @@
 # /home/node/.openclaw. The root filesystem is read-only in the cluster.
 set -euo pipefail
 
-MANIFEST="/opt/config/skills-manifest.txt"
+# The cluster mounts its own list (ConfigMap) and sets OPENCLAW_SKILLS_MANIFEST.
+# The file baked into the image is the fallback for a standalone run.
+MANIFEST="${OPENCLAW_SKILLS_MANIFEST:-/opt/config/skills-manifest.txt}"
 WORKDIR="/home/node/.openclaw/workspace"
 
 ###############################################################################
