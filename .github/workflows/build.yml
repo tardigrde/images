@@ -9,11 +9,14 @@ on:
 permissions:
   contents: read
 
-# Each image variant builds natively on amd64 and arm64 (no QEMU), pushes by
-# digest, then a merge job joins the two digests into one multi-arch tag.
+# One row per image and architecture. Each row builds natively (no QEMU), pushes
+# by digest, then a merge job joins the digests of one image into one tag.
+# Image names are fixed on purpose: the repo is called "images", but the
+# packages keep their names (ghcr.io/tardigrde/opencode-image is pinned in the
+# home-cluster repo).
 jobs:
   build:
-    name: build ${{ matrix.variant }} ${{ matrix.arch }}
+    name: build ${{ matrix.key }} ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -21,15 +24,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [server, eval]
-        arch: [amd64, arm64]
         include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
+          - { key: opencode-server, dir: opencode, target: server, image: opencode-image, arch: amd64, runner: ubuntu-24.04 }
+          - { key: opencode-server, dir: opencode, target: server, image: opencode-image, arch: arm64, runner: ubuntu-24.04-arm }
+          - { key: opencode-eval, dir: opencode, target: eval, image: opencode-image-eval, arch: amd64, runner: ubuntu-24.04 }
+          - { key: opencode-eval, dir: opencode, target: eval, image: opencode-image-eval, arch: arm64, runner: ubuntu-24.04-arm }
+          # openclaw runs on the VPS only (amd64).
+          - { key: openclaw, dir: openclaw, target: "", image: openclaw-image, arch: amd64, runner: ubuntu-24.04 }
     env:
-      IMAGE: ghcr.io/${{ github.repository }}${{ matrix.variant == 'eval' && '-eval' || '' }}
+      IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -43,38 +46,44 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
-          context: .
-          target: ${{ matrix.variant }}
+          context: ${{ matrix.dir }}
+          target: ${{ matrix.target }}
           platforms: linux/${{ matrix.arch }}
           load: true
           provenance: false
-          tags: smoke:${{ matrix.variant }}
-          cache-from: type=gha,scope=${{ matrix.variant }}-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.variant }}-${{ matrix.arch }}
+          tags: smoke:${{ matrix.key }}
+          cache-from: type=gha,scope=${{ matrix.key }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.key }}-${{ matrix.arch }}
       - name: Build (main) - push by digest
         id: push
         if: github.event_name != 'pull_request'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
-          context: .
-          target: ${{ matrix.variant }}
+          context: ${{ matrix.dir }}
+          target: ${{ matrix.target }}
           platforms: linux/${{ matrix.arch }}
           provenance: false
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.variant }}-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.variant }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.key }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.key }}-${{ matrix.arch }}
       - name: Smoke test
         if: github.event_name == 'pull_request'
         run: |
-          if [ "${{ matrix.variant }}" = server ]; then
-            docker run --rm smoke:server --version
-            docker run --rm --entrypoint bash smoke:server -c 'id; git --version; gh --version | head -1; mise --version; rg --version | head -1'
-          else
-            docker run --rm smoke:eval bash -c 'test "$(id -u)" = 0; git --version; gh --version | head -1; rg --version | head -1; /root/.harbor/agents/opencode-v2/node_modules/.bin/opencode --version'
-          fi
+          case "${{ matrix.key }}" in
+            opencode-server)
+              docker run --rm smoke:opencode-server --version
+              docker run --rm --entrypoint bash smoke:opencode-server -c 'id; git --version; gh --version | head -1; mise --version; rg --version | head -1'
+              ;;
+            opencode-eval)
+              docker run --rm smoke:opencode-eval bash -c 'test "$(id -u)" = 0; git --version; gh --version | head -1; rg --version | head -1; /root/.harbor/agents/opencode-v2/node_modules/.bin/opencode --version'
+              ;;
+            openclaw)
+              docker run --rm --entrypoint bash smoke:openclaw -c 'test "$(id -u)" = 1000; openclaw --version; composio --version; age --version; sqlite3 --version; git --version; opencode --version; command -v acpx'
+              ;;
+          esac
       - name: Export digest
         if: github.event_name != 'pull_request'
         run: |
@@ -84,13 +93,13 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: github.event_name != 'pull_request'
         with:
-          name: digests-${{ matrix.variant }}-${{ matrix.arch }}
+          name: digests-${{ matrix.key }}-${{ matrix.arch }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
 
   merge:
-    name: publish ${{ matrix.variant }}
+    name: publish ${{ matrix.key }}
     if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-24.04
@@ -100,15 +109,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [server, eval]
+        include:
+          # version_arg: the ARG in the Dockerfile that holds the main program version (the tag).
+          - { key: opencode-server, dir: opencode, image: opencode-image, version_arg: OPENCODE_VERSION }
+          - { key: opencode-eval, dir: opencode, image: opencode-image-eval, version_arg: OPENCODE_V2_VERSION }
+          - { key: openclaw, dir: openclaw, image: openclaw-image, version_arg: OPENCLAW_VERSION }
     env:
-      IMAGE: ghcr.io/${{ github.repository }}${{ matrix.variant == 'eval' && '-eval' || '' }}
+      IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: ${{ runner.temp }}/digests
-          pattern: digests-${{ matrix.variant }}-*
+          pattern: digests-${{ matrix.key }}-*
           merge-multiple: true
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -117,23 +130,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: v
-        # The tag is the version of the opencode CLI inside the variant.
+        # The tag is the version of the main program inside the image.
         run: |
-          if [ "${{ matrix.variant }}" = eval ]; then arg=OPENCODE_V2_VERSION; else arg=OPENCODE_VERSION; fi
-          echo "opencode=$(sed -n "s/^ARG ${arg}=//p" Dockerfile)" >> "$GITHUB_OUTPUT"
-      - name: Create the multi-arch manifest
+          echo "version=$(sed -n "s/^ARG ${{ matrix.version_arg }}=//p" ${{ matrix.dir }}/Dockerfile)" >> "$GITHUB_OUTPUT"
+      - name: Create the manifest
         working-directory: ${{ runner.temp }}/digests
         run: |
-          v=${{ steps.v.outputs.opencode }}
+          v=${{ steps.v.outputs.version }}
           docker buildx imagetools create \
             -t "$IMAGE:$v-${{ github.sha }}" -t "$IMAGE:$v" -t "$IMAGE:latest" \
             $(printf "$IMAGE@sha256:%s " *)
-      - name: Smoke test
-        run: |
-          v=${{ steps.v.outputs.opencode }}
-          docker buildx imagetools inspect "$IMAGE:$v"
-          if [ "${{ matrix.variant }}" = server ]; then
-            docker run --rm "$IMAGE:$v" --version
-          else
-            docker run --rm "$IMAGE:$v" /root/.harbor/agents/opencode-v2/node_modules/.bin/opencode --version
-          fi
+      - name: Inspect
+        run: docker buildx imagetools inspect "$IMAGE:${{ steps.v.outputs.version }}"
