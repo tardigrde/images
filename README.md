@@ -22,7 +22,7 @@ Nothing private goes into these images. Tokens and repos come in at runtime.
 
 Tags for both images: `<opencode version>`, `latest`, and
 `<opencode version>-<git sha>`. The version is the opencode CLI inside that
-image: 1.x for `server`, 2.x for `eval`.
+image: 2.x for both `server` and `eval`.
 
 One `opencode/Dockerfile` builds both. A shared `base` stage holds the tools. Each variant
 is a stage on top of it, so a new use case is one new stage. The `server` stage is
