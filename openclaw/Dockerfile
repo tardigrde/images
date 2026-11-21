@@ -5,6 +5,7 @@
 # for Kubernetes:
 #   - no Chromium and no agent-browser (the VPS has no RAM for it; D26),
 #   - no sudo (the pod runs non-root with a read-only root filesystem),
+#   - no SOPS (secrets are Kubernetes Secrets; the container never decrypts),
 #   - sqlite3 and age are in, for the backup CronJob (docs/openclaw-plan.md).
 # Runtime installs (plugins and skills) go to the PVC at /home/node/.openclaw.
 # Everything else that a skill needs must be installed here at build time.
@@ -25,12 +26,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tini \
     unzip \
   && rm -rf /var/lib/apt/lists/*
-
-# SOPS: cosign verifies the release signature at build time (no hash in the repo).
-ARG SOPS_VERSION=3.13.3
-COPY --from=gcr.io/projectsigstore/cosign:v2.6.5 /ko-app/cosign /usr/local/bin/cosign
-COPY scripts/install-sops.sh /usr/local/bin/install-sops.sh
-RUN bash /usr/local/bin/install-sops.sh "${SOPS_VERSION}"
 
 # uv: Python versions and project dependencies.
 ARG UV_VERSION=0.12.3

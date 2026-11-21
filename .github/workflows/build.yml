@@ -81,7 +81,7 @@ jobs:
               docker run --rm smoke:opencode-eval bash -c 'test "$(id -u)" = 0; git --version; gh --version | head -1; rg --version | head -1; /root/.harbor/agents/opencode-v2/node_modules/.bin/opencode --version'
               ;;
             openclaw)
-              docker run --rm --entrypoint bash smoke:openclaw -c 'test "$(id -u)" = 1000; openclaw --version; composio --version; sops --version; age --version; sqlite3 --version; git --version; opencode --version; command -v acpx'
+              docker run --rm --entrypoint bash smoke:openclaw -c 'test "$(id -u)" = 1000; openclaw --version; composio --version; age --version; sqlite3 --version; git --version; opencode --version; command -v acpx'
               ;;
           esac
       - name: Export digest

@@ -12,8 +12,9 @@ runtime (Secrets and the PVC in `tardigrde/home-cluster`, `k8s/apps/openclaw`).
 - Node 24 (Debian bookworm slim), `git`, `curl`, `jq`, `python3`, `openssh-client`,
   `sqlite3`, `age`, `tini`.
 - `openclaw`, `clawhub`, `summarize`, `acpx`, and the opencode v2 CLI (`opencode`).
-- SOPS (signature checked with cosign at build time), `uv`, Composio CLI.
-- No Chromium, no agent-browser, no sudo (decision D26 in home-cluster).
+- `uv` and the Composio CLI (pinned).
+- No Chromium, no agent-browser, no sudo, no SOPS (decision D26 in home-cluster).
+  Secrets are Kubernetes Secrets, so the container never decrypts anything.
 
 ## Start
 
@@ -39,5 +40,5 @@ home-cluster, section "Upgrades").
 
 ```sh
 docker build -t openclaw-image:test openclaw/
-docker run --rm --entrypoint bash openclaw-image:test -c 'openclaw --version; composio --version; sops --version'
+docker run --rm --entrypoint bash openclaw-image:test -c 'openclaw --version; composio --version; age --version'
 ```
