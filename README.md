@@ -1,4 +1,13 @@
-# opencode-image
+# images
+
+My container images. One folder per image family:
+
+- `opencode/`: images for [opencode](https://github.com/anomalyco/opencode) (`opencode-image`, `opencode-image-eval`).
+- `openclaw/`: the OpenClaw gateway for the home-cluster VPS (`openclaw-image`, amd64 only). See `openclaw/README.md`.
+
+The repo was called `opencode-image` until 2026-11-21. The package names did not change.
+
+## opencode images
 
 Misc container images for [opencode](https://github.com/anomalyco/opencode),
 one per use case. All images are Debian `trixie-slim` (glibc) with `git`, `gh`,
@@ -13,9 +22,9 @@ Nothing private goes into these images. Tokens and repos come in at runtime.
 
 Tags for both images: `<opencode version>`, `latest`, and
 `<opencode version>-<git sha>`. The version is the opencode CLI inside that
-image: 1.x for `server`, 2.x for `eval`.
+image: 2.x for both `server` and `eval`.
 
-One `Dockerfile` builds both. A shared `base` stage holds the tools. Each variant
+One `opencode/Dockerfile` builds both. A shared `base` stage holds the tools. Each variant
 is a stage on top of it, so a new use case is one new stage. The `server` stage is
 last, so a plain `docker build .` still gives the server image.
 
@@ -27,7 +36,7 @@ last, so a plain `docker build .` still gives the server image.
 - Default command: `opencode serve --hostname 0.0.0.0 --port 4096`.
 
 ```sh
-docker build --target server -t opencode-image:test .
+docker build --target server -t opencode-image:test opencode/
 docker run --rm opencode-image:test --version
 ```
 
@@ -47,7 +56,7 @@ agent-skill-eval run --backend harbor --harbor-base-image ghcr.io/tardigrde/open
 ```
 
 ```sh
-docker build --target eval -t opencode-image-eval:test .
+docker build --target eval -t opencode-image-eval:test opencode/
 docker run --rm opencode-image-eval:test /root/.harbor/agents/opencode-v2/node_modules/.bin/opencode --version
 ```
 
