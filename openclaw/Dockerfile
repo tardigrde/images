@@ -50,7 +50,7 @@ RUN curl -fsSL https://composio.dev/install \
 # renovate: datasource=npm depName=openclaw
 ARG OPENCLAW_VERSION=2026.10.9
 # renovate: datasource=npm depName=clawhub
-ARG CLAWHUB_VERSION=0.24.1
+ARG CLAWHUB_VERSION=0.27.0
 # renovate: datasource=npm depName=@steipete/summarize
 ARG SUMMARIZE_VERSION=0.25.3
 # renovate: datasource=npm depName=acpx
