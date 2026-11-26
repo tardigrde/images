@@ -48,7 +48,7 @@ RUN curl -fsSL https://composio.dev/install \
 # Pinned versions. Renovate bumps them (see renovate.json). An OpenClaw bump on
 # an existing PVC needs the doctor run: docs/openclaw-plan.md, "Upgrades".
 # renovate: datasource=npm depName=openclaw
-ARG OPENCLAW_VERSION=2026.10.9
+ARG OPENCLAW_VERSION=2026.11.10
 # renovate: datasource=npm depName=clawhub
 ARG CLAWHUB_VERSION=0.24.1
 # renovate: datasource=npm depName=@steipete/summarize
