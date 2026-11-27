@@ -54,7 +54,7 @@ ARG CLAWHUB_VERSION=0.24.1
 # renovate: datasource=npm depName=@steipete/summarize
 ARG SUMMARIZE_VERSION=0.25.3
 # renovate: datasource=npm depName=acpx
-ARG ACPX_VERSION=0.13.0
+ARG ACPX_VERSION=0.23.0
 # Stable v2 channel (npm "latest" of @opencode/cli). Not the beta channel.
 # renovate: datasource=npm depName=@opencode/cli
 ARG OPENCODE_CLI_VERSION=2.3.2
